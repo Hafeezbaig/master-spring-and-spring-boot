@@ -334,3 +334,154 @@ public class ListTest {
 }
 ```
 ---
+
+## How to Run
+
+Needs Java 17+ (Spring Boot 4 needs 17 or higher) and Maven 3.8+.
+
+```bash
+mvn test
+```
+
+Expected: `Tests run: 18, Failures: 0, Errors: 0, Skipped: 0` then `BUILD SUCCESS`.
+
+That is the 10 tests from the lecture (stub, mock, list) plus 8 new ones in
+`SomeBusinessImplMockitoFeaturesTest` (see below).
+
+**Eclipse:** *File > Import > Existing Maven Projects* > pick this folder >
+right-click a test > *Run As > JUnit Test*.
+
+### About the Mockito agent line in pom.xml
+
+On newer JDKs Mockito used to print this on every run:
+
+> Mockito is currently self-attaching to enable the inline-mock-maker. This
+> will no longer work in future releases of the JDK.
+
+Mockito needs a Java agent to mock final classes and methods. The old way it
+loaded that agent is being switched off in future JDKs. The fix is to load
+Mockito as an agent when the test JVM starts. The `pom.xml` does this in the
+Surefire plugin:
+
+```xml
+<argLine>-javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar</argLine>
+```
+
+`${mockito.version}` comes from the Spring Boot parent, so there is no version
+to keep in sync. The warning is gone and the build is ready for newer JDKs.
+
+---
+
+## Notes
+
+### What the lecture covers vs what the new test file adds
+
+| Lecture (first 5 steps)                  | New file `SomeBusinessImplMockitoFeaturesTest` |
+|------------------------------------------|------------------------------------------------|
+| `mock(Class)`                            | type-inferred `mock()`                          |
+| `when(...).thenReturn(...)`              | `verify(...)`, `times(n)`, `never()`            |
+| multiple returns                         | `thenThrow(...)` for the error path             |
+| `@Mock`, `@InjectMocks`                  | `@Captor` + `ArgumentCaptor`                    |
+| `anyInt()`                               | `any(...)`, `eq(...)`                           |
+| (not shown)                              | BDD style: `given().willReturn()`, `then().should()` |
+| (not shown)                              | `@Spy` / `spy(...)` (real object, partial stub) |
+| (not shown)                              | AssertJ `assertThat(...)` (ships with the test starter) |
+
+All new examples run over the course's own `SomeBusinessImpl` / `DataService`,
+so there is nothing new to learn about the domain.
+
+### Stubbing cheat sheet (what a mock should return)
+
+| Call                                        | Meaning                                      |
+|---------------------------------------------|----------------------------------------------|
+| `when(m.x()).thenReturn(v)`                 | Return `v` when `x()` is called              |
+| `when(m.x()).thenReturn(a).thenReturn(b)`   | Return `a` first call, `b` after that        |
+| `when(m.x()).thenThrow(new E())`            | Throw instead of returning                   |
+| `given(m.x()).willReturn(v)`                | Same as `thenReturn`, BDD wording            |
+| `doReturn(v).when(spy).x()`                 | Stub a spy without calling the real `x()`    |
+
+### Verification cheat sheet (how a mock was used)
+
+| Call                                  | Checks that...                          |
+|---------------------------------------|-----------------------------------------|
+| `verify(m).x()`                       | `x()` was called exactly once           |
+| `verify(m, times(2)).x()`             | `x()` was called twice                  |
+| `verify(m, never()).x()`              | `x()` was never called                  |
+| `verify(m, atLeastOnce()).x()`        | `x()` was called one or more times      |
+| `then(m).should().x()`                | Same as `verify`, BDD wording           |
+| `verifyNoInteractions(m)`             | The mock was never touched at all       |
+
+### Argument matchers
+
+| Matcher          | Matches                                  |
+|------------------|------------------------------------------|
+| `any()`          | Any value (including null on some types) |
+| `any(String.class)` | Any non-null `String`                 |
+| `anyInt()`, `anyString()` | Any value of that type          |
+| `eq(value)`      | Exactly `value`                          |
+
+Rule: if you use a matcher for one argument of a call, use matchers for every
+argument of that call (e.g. `m.foo(eq("a"), any())`, not `m.foo("a", any())`).
+
+### Annotations (need `@ExtendWith(MockitoExtension.class)`)
+
+| Annotation     | Does                                                |
+|----------------|-----------------------------------------------------|
+| `@Mock`        | Creates a mock for that field                       |
+| `@InjectMocks` | Builds the real object and injects the mocks into it|
+| `@Spy`         | Wraps a real object; un-stubbed methods run for real|
+| `@Captor`      | Creates an `ArgumentCaptor` for that field          |
+
+### mock vs spy
+
+| | `mock(T.class)` | `spy(realObject)` |
+|---|---|---|
+| Backing object | none, all methods faked | a real instance |
+| Un-stubbed method | returns default (0, null, empty) | runs the real method |
+| Use when | you do not need real behaviour | you want real behaviour but to override a bit |
+
+### Style tips
+- Name tests like sentences: `findGreatest_emptyArray_returnsMinValue()`.
+- One behaviour per test.
+- Stub only what the test needs. `MockitoExtension` is strict and will flag
+  unused stubs, which keeps tests honest.
+- Use `verify` to check side effects (a call happened), not to repeat what the
+  assertion already proved.
+
+> `SomeBusinessImplMockitoFeaturesTest.java` has runnable examples of every row
+> in the tables above.
+
+---
+
+## Useful References
+
+### Mockito (official)
+- Mockito site : https://site.mockito.org/
+- `Mockito` Javadoc (the big how-to) : https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html
+- `BDDMockito` Javadoc : https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/BDDMockito.html
+- `ArgumentCaptor` Javadoc : https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/ArgumentCaptor.html
+- `ArgumentMatchers` Javadoc : https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/ArgumentMatchers.html
+- `MockitoExtension` (JUnit 5) : https://javadoc.io/doc/org.mockito/mockito-junit-jupiter/latest/org.mockito.junit.jupiter/org/mockito/junit/jupiter/MockitoExtension.html
+- Mockito on GitHub : https://github.com/mockito/mockito
+- Release notes : https://github.com/mockito/mockito/releases
+- Mockito wiki (FAQ, how to write good tests) : https://github.com/mockito/mockito/wiki
+
+### The Java agent change (the warning this module fixes)
+- Mockito + newer JDK agent setup : https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+- Configure the Mockito agent for Java 21+ (rieckpil) : https://rieckpil.de/how-to-configure-mockito-agent-for-java-21-without-warning/
+- JEP 451 (why dynamic agent loading is being restricted) : https://openjdk.org/jeps/451
+
+### JUnit 5 (the test runner used here)
+- JUnit 5 User Guide : https://docs.junit.org/current/user-guide/
+- `@ExtendWith` and extensions : https://docs.junit.org/current/user-guide/#extensions
+
+### Spring Boot testing
+- Testing in Spring Boot : https://docs.spring.io/spring-boot/reference/testing/index.html
+- `spring-boot-starter-test` (what it bundles) : https://docs.spring.io/spring-boot/reference/testing/test-scope-dependencies.html
+- Spring Boot Maven plugin : https://docs.spring.io/spring-boot/maven-plugin/index.html
+
+### Going further
+- AssertJ (fluent assertions, bundled with the starter) : https://assertj.github.io/doc/
+- Hamcrest matchers : http://hamcrest.org/JavaHamcrest/
+- Maven Surefire plugin : https://maven.apache.org/surefire/maven-surefire-plugin/
+- Martin Fowler, Mocks Aren't Stubs (mock vs stub) : https://martinfowler.com/articles/mocksArentStubs.html
