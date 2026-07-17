@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
  * assertAll for grouped assertions, and assertThrows for the error path. All of
  * them still use the existing calculateSum method - no new code in MyMath.
  *
- * Parameterized versions of these live in ModernJUnit5FeaturesTest.
+ * Parameterized versions of these live in JUnit6FeaturesDemoTest.
  */
 class MyMathTest {
 

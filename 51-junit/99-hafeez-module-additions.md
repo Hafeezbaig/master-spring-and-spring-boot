@@ -3,7 +3,7 @@
 **Module:** `master-spring-and-spring-boot/51-junit`
 
 The idea was to enhance the existing JUnit module **without touching the
-production code**. So `MyMath.java` stays exactly as the lecture left it - no new
+production code**. So `MyMath.java` stays exactly as the lecture left it, no new
 methods, no `divide()`, no `isEven()`. Everything I added is extra test cases,
 annotations and modern JUnit features built on top of the one method that was
 already there: `calculateSum(int[])`.
@@ -15,7 +15,7 @@ JUnit: **Jupiter 6.0.3**. Java: **17+** (required by JUnit 6).
 ## Quick list - what I added
 
 1. A `pom.xml` so the module builds and `mvn test` runs from the command line.
-2. New test class `ModernJUnit5FeaturesTest` - a tour of modern JUnit annotations.
+2. New test class `JUnit6FeaturesDemoTest` - a tour of modern JUnit annotations.
 3. New test class `MyParameterizedClassTest` - the newer `@ParameterizedClass`.
 4. More tests + annotations in `MyMathTest`.
 5. Fixed a hidden JUnit 4 bug and filled in `MyAssertTest`.
@@ -23,11 +23,11 @@ JUnit: **Jupiter 6.0.3**. Java: **17+** (required by JUnit 6).
 7. A **Useful References** section at the end of `readme.md`.
 8. This document.
 
-Result: **6 tests -> 33 tests** (1 intentionally skipped), production code unchanged.
+Result: **6 tests -> 43 tests** (1 intentionally skipped), production code unchanged.
 
 ---
 
-## Step by step - how I built each addition
+## Build log - how each addition was built
 
 ### Step 1 - Make the module runnable (`pom.xml`)
 The module was Eclipse-only, there was no build file, so tests couldn't run from
@@ -58,12 +58,14 @@ the *same* `calculateSum` method:
 Added a class-level `@DisplayName` so the lifecycle demo shows a friendly heading.
 The methods themselves are untouched.
 
-### Step 5 - New file: `ModernJUnit5FeaturesTest`
-A short, one-feature-per-test tour of everything the "5 steps" lecture skips, all
-running against `calculateSum`:
-`@DisplayName`, `@ParameterizedTest` (`@ValueSource`, `@CsvSource`),
-`assertThrows`, `assertTimeout`, `assumeTrue`, `@RepeatedTest`, `@Disabled`,
-`@Nested`, `@Tag`.
+### Step 5 - New file: `JUnit6FeaturesDemoTest`
+A one-feature-per-class tour of everything the "5 steps" lecture skips, all
+running against `calculateSum`: `@DisplayName`, `@ParameterizedTest`
+(`@ValueSource`, `@CsvSource`), `@RepeatedTest`, JSpecify nullability
+(`@NullMarked`/`@Nullable`), `@Timeout` and `assertTimeout`, `assumeTrue`,
+`@Disabled`, `@Nested`, `@Tag`, system properties, default `Locale`/`TimeZone`,
+and deterministic nested ordering. (The earlier `ModernJUnit5FeaturesTest` file
+was folded into this one, so there is a single features file instead of two.)
 
 ### Step 6 - New file: `MyParameterizedClassTest`
 This is the **parameterized class** (different from a parameterized test). With
@@ -77,7 +79,7 @@ References** section of official doc links at the very end.
 
 ---
 
-## Step by step
+## Feature reference - what's inside `JUnit6FeaturesDemoTest`
 
 These are the JUnit 6 features demonstrated in
 [`JUnit6FeaturesDemoTest.java`](test/com/in28minutes/junit/JUnit6FeaturesDemoTest.java),
@@ -178,6 +180,82 @@ class MyMathNestedOrderingTest {
 }
 ```
 
+### Feature 8 - Parameterized Tests with `@CsvSource`
+Passes the input and the expected result together on one line, so each row reads
+almost like a small table. Handy when the inputs and outputs vary together.
+Reference: https://docs.junit.org/6.1.0/writing-tests/parameterized-classes-and-tests.html
+
+```java
+@ParameterizedTest(name = "sum of [{0}] = {1}")
+@CsvSource({"'1,2,3', 6", "'5', 5", "'-1,-2,-3', -6", "'10,-10', 0"})
+void calculateSum_csvSource(String csv, int expected) {
+    assertEquals(expected, math.calculateSum(toIntArray(csv)));
+}
+```
+
+### Feature 9 - Timeout as an assertion (`assertTimeout`)
+`@Timeout` (Feature 4) times the whole test; `assertTimeout` times only the block
+of code you wrap, from inside the test body.
+Reference: https://docs.junit.org/6.1.0/writing-tests/timeouts.html
+
+```java
+@Test
+void calculateSum_isFast() {
+    assertTimeout(Duration.ofMillis(100),
+        () -> math.calculateSum(new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+}
+```
+
+### Feature 10 - Assumptions (`assumeTrue`)
+Skips a test (rather than failing it) when a precondition isn't met - useful for
+tests that only make sense in certain environments.
+Reference: https://docs.junit.org/6.1.0/writing-tests/assumptions.html
+
+```java
+@Test
+void runsOnlyOn64BitJvm() {
+    assumeTrue("64".equals(System.getProperty("sun.arch.data.model")));
+    assertNotNull(math);
+}
+```
+
+### Feature 11 - Disabling a test (`@Disabled`)
+Switches a test off without deleting it. Always leave a reason. This is the one
+intentionally skipped test in the suite.
+Reference: https://docs.junit.org/6.1.0/writing-tests/disabling-tests.html
+
+```java
+@Test
+@Disabled("Demo only - shows how to temporarily skip a test")
+void thisTestIsCurrentlySkipped() { throw new IllegalStateException("Should never run"); }
+```
+
+### Feature 12 - Grouping with `@Nested`
+Keeps related cases together under one readable heading. Feature 7 is about the
+order nested classes run in; this one is just about grouping.
+Reference: https://docs.junit.org/6.1.0/writing-tests/nested-tests.html
+
+```java
+@DisplayName("calculateSum edge cases")
+class MyMathEdgeCasesTest {
+    @Nested
+    @DisplayName("Simple array inputs")
+    class SimpleArrays {
+        @Test void emptyArray_returnsZero() { assertEquals(0, math.calculateSum(new int[]{})); }
+    }
+}
+```
+
+### Feature 13 - Tagging tests (`@Tag`)
+Labels a test so the build can include or exclude it, e.g. `mvn test -Dgroups=fast`.
+Reference: https://docs.junit.org/6.1.0/writing-tests/tagging-and-filtering.html
+
+```java
+@Test
+@Tag("fast")
+void taggedFast() { assertEquals(2, math.calculateSum(new int[]{1, 1})); }
+```
+
 ---
 
 ## Dependencies I added
@@ -204,12 +282,12 @@ The version is set once at the top of the pom:
 
 | | Before | After |
 |---|---|---|
-| Tests | 6 | 33 (1 intentionally skipped) |
+| Tests | 6 | 43 (1 intentionally skipped) |
 | Production code | `MyMath.calculateSum` | `MyMath.calculateSum` (unchanged) |
 | Annotations / features | `@Test`, lifecycle, basic asserts | + `@DisplayName`, `@ParameterizedTest`, `@ValueSource`, `@CsvSource`, **`@ParameterizedClass` + `@Parameter`**, `assertThrows`, `assertAll`, `assertTimeout`, `assumeTrue`, `@RepeatedTest`, `@Disabled`, `@Nested`, `@Tag` |
 | Build file | none (Eclipse only) | `pom.xml` - `mvn test` works |
 | JUnit version | mixed JUnit 4 import + Jupiter | Jupiter only, pinned to 6.0.3 via the BOM |
-| `mvn test` | not possible (no pom) | BUILD SUCCESS, 33 tests, 1 skipped, 0 failures |
+| `mvn test` | not possible (no pom) | BUILD SUCCESS, 43 tests, 1 skipped, 0 failures |
 
 ---
 
@@ -220,6 +298,6 @@ cd master-spring-and-spring-boot/51-junit
 mvn test
 ```
 
-(The one skipped test is the `@Disabled` demo in `ModernJUnit5FeaturesTest`.)
+(The one skipped test is the `@Disabled` demo in `JUnit6FeaturesDemoTest`.)
 
 ---
