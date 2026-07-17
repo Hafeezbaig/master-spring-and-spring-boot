@@ -179,6 +179,7 @@ class MyMathTest {
 - `Assertions` API : https://docs.junit.org/current/api/org.junit.jupiter.api/org/junit/jupiter/api/Assertions.html
 - `Assumptions` API : https://docs.junit.org/current/api/org.junit.jupiter.api/org/junit/jupiter/api/Assumptions.html
 - Parameterized tests : https://docs.junit.org/current/user-guide/#writing-tests-parameterized-tests
+- Parameterized classes : https://docs.junit.org/current/user-guide/#writing-tests-parameterized-classes
 - Release notes : https://docs.junit.org/current/release-notes/
 - Maven starter pom : https://github.com/junit-team/junit-examples/tree/r6.0.3/junit-jupiter-starter-maven
 - Source on GitHub : https://github.com/junit-team/junit

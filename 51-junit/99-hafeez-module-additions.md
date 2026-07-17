@@ -2,9 +2,9 @@
 
 **Module:** `master-spring-and-spring-boot/51-junit`
 
-The goal here was to enhance the existing JUnit module - **without touching the
-production code**. So `MyMath.java` is exactly as the lecture left it (no new
-methods, no `divide()`, no `isEven()`). Everything below is extra test cases,
+The idea was to enhance the existing JUnit module **without touching the
+production code**. So `MyMath.java` stays exactly as the lecture left it - no new
+methods, no `divide()`, no `isEven()`. Everything I added is extra test cases,
 annotations and modern JUnit features built on top of the one method that was
 already there: `calculateSum(int[])`.
 
@@ -12,54 +12,214 @@ JUnit: **Jupiter 6.0.3**. Java: **17+** (required by JUnit 6).
 
 ---
 
-## 1. What changed, file by file
+## Quick list - what I added
 
-### New files
+1. A `pom.xml` so the module builds and `mvn test` runs from the command line.
+2. New test class `ModernJUnit5FeaturesTest` - a tour of modern JUnit annotations.
+3. New test class `MyParameterizedClassTest` - the newer `@ParameterizedClass`.
+4. More tests + annotations in `MyMathTest`.
+5. Fixed a hidden JUnit 4 bug and filled in `MyAssertTest`.
+6. A friendly `@DisplayName` on `MyBeforeAfterTest`.
+7. A **Useful References** section at the end of `readme.md`.
+8. This document.
 
-| File | Why |
-|---|---|
-| `pom.xml` | The module had no build file, so the tests could only run inside Eclipse. This pom points at the existing `src/` and `test/` folders (nothing moved), pulls JUnit 6 in via the official BOM, and adds Surefire. `mvn test` works now. |
-| `test/.../ModernJUnit5FeaturesTest.java` | A short, friendly tour of the Jupiter features the "5 steps" lecture skips: `@DisplayName`, `@ParameterizedTest` (`@ValueSource`, `@CsvSource`), `assertThrows`, `assertTimeout`, `assumeTrue`, `@RepeatedTest`, `@Disabled`, `@Nested`, `@Tag`. Every test runs against the existing `calculateSum` - one feature per test. |
-| `99-hafeez-module-additions.md` | This file. |
-
-### Modified files (tests only)
-
-| File | What changed | Why |
-|---|---|---|
-| `test/.../MyMathTest.java` | Kept the original two tests untouched. Added three: `calculateSum_grouped` (`assertAll`), `calculateSum_null_throws` (`assertThrows`), plus a `@DisplayName`. | Shows the original sum tests right next to patterns you hit in real projects. `calculateSum(null)` already throws `NullPointerException`, so we get an error path to test for free. |
-| `test/.../MyAssertTest.java` | Replaced the JUnit 4 import (`org.junit.Assert.assertArrayEquals`) with the Jupiter one. Turned the commented-out `assertNull` / `assertNotNull` lines into real assertions. Flipped the deliberately-failing `assertArrayEquals({1,2}, {2,1})` to a passing one, with a comment explaining the original was a red-bar demo. | The JUnit 4 import was a real latent bug - it only compiled because JUnit 4 sat on the classpath, and would have broken the build under JUnit 6. |
-| `test/.../MyBeforeAfterTest.java` | Added a class-level `@DisplayName`. Methods untouched. | Keeps the lifecycle demo as-is while showing one more annotation. |
-| `readme.md` | Kept all the original "Step 1-5" text and listings. Appended a **Useful References** section of official doc links at the end. | The one thing the module was missing - somewhere to go next. |
-
-### Untouched on purpose
-
-| File | Note |
-|---|---|
-| `src/.../MyMath.java` | Left exactly as the lecture shipped it. The brief was "no separate methods" - so all the new tests work against the existing `calculateSum`. |
+Result: **6 tests -> 33 tests** (1 intentionally skipped), production code unchanged.
 
 ---
 
-## 2. Before / after
+## Step by step - how I built each addition
+
+### Step 1 - Make the module runnable (`pom.xml`)
+The module was Eclipse-only, there was no build file, so tests couldn't run from
+the terminal. I added a `pom.xml` that:
+- points at the existing `src/` and `test/` folders (I didn't move any files),
+- pulls JUnit 6 in through the official BOM,
+- adds the Surefire plugin so `mvn test` picks the tests up.
+
+After this, `mvn test` works.
+
+### Step 2 - Enhance `MyMathTest` (existing file)
+I kept the original two tests exactly as they were, then added three more around
+the *same* `calculateSum` method:
+- `calculateSum_grouped` - uses `assertAll` to check several inputs in one test.
+- `calculateSum_null_throws` - uses `assertThrows`; `calculateSum(null)` already
+  throws `NullPointerException`, so I get an error path to test for free.
+- added `@DisplayName` for readable names in the report.
+
+### Step 3 - Fix and finish `MyAssertTest` (existing file)
+- Replaced the JUnit 4 import (`org.junit.Assert.assertArrayEquals`) with the
+  Jupiter one. This was a real hidden bug - it only compiled because JUnit 4 sat
+  on the classpath, and would break under JUnit 6.
+- Turned the commented-out `assertNull` / `assertNotNull` lines into real asserts.
+- Flipped the deliberately-failing `assertArrayEquals({1,2}, {2,1})` to a passing
+  one, with a comment noting the original was a red-bar demo.
+
+### Step 4 - Tidy `MyBeforeAfterTest` (existing file)
+Added a class-level `@DisplayName` so the lifecycle demo shows a friendly heading.
+The methods themselves are untouched.
+
+### Step 5 - New file: `ModernJUnit5FeaturesTest`
+A short, one-feature-per-test tour of everything the "5 steps" lecture skips, all
+running against `calculateSum`:
+`@DisplayName`, `@ParameterizedTest` (`@ValueSource`, `@CsvSource`),
+`assertThrows`, `assertTimeout`, `assumeTrue`, `@RepeatedTest`, `@Disabled`,
+`@Nested`, `@Tag`.
+
+### Step 6 - New file: `MyParameterizedClassTest`
+This is the **parameterized class** (different from a parameterized test). With
+`@ParameterizedClass` the *whole class* re-runs once per row of `@CsvSource` data,
+and every `@Test` inside sees the injected `@Parameter` values. I gave it 3 data
+rows and 2 tests, so it runs 6 times in total.
+
+### Step 7 - Add references to `readme.md`
+Kept all the original "Step 1-5" text and listings, and appended a **Useful
+References** section of official doc links at the very end.
+
+---
+
+## Step by step
+
+These are the JUnit 6 features demonstrated in
+[`JUnit6FeaturesDemoTest.java`](test/com/in28minutes/junit/JUnit6FeaturesDemoTest.java),
+all running against the unchanged `calculateSum(int[])` method.
+
+### Feature 1 - Parameterized Tests (`@ParameterizedTest` + `@ValueSource`)
+Runs the same test once per value in the source, so one method covers many inputs.
+- **Reference**: https://docs.junit.org/6.1.0/writing-tests/parameterized-classes-and-tests.html
+
+```java
+@ParameterizedTest(name = "Test {index}: multiplier = {0}")
+@ValueSource(ints = {1, 2, 3, 4, 5})
+void calculateSum_WithDifferentMultipliers(int multiplier) {
+    int baseSum = math.calculateSum(new int[]{1, 2, 3});
+    assertTrue(baseSum * multiplier > 0);
+}
+```
+
+### Feature 2 - Repeated Tests (`@RepeatedTest` + `RepetitionInfo`)
+Repeats a test a fixed number of times; `RepetitionInfo` tells you which run you are
+on, so each repetition can assert a different case. Built on `@TestTemplate`.
+
+Reference: https://docs.junit.org/6.1.0/writing-tests/repeated-tests.html
+
+```java
+@RepeatedTest(4)
+void repeatCalculateSum(RepetitionInfo info) {
+    switch (info.getCurrentRepetition()) {
+        case 1 -> assertEquals(6, math.calculateSum(new int[]{1, 2, 3}));
+        case 2 -> assertEquals(0, math.calculateSum(new int[]{}));
+        // ...
+    }
+}
+```
+
+### Feature 3 - Null-safety with JSpecify (`@NullMarked` / `@Nullable`)
+JUnit 6 ships JSpecify annotations. `@NullMarked` makes everything non-null by
+default; `@Nullable` opts a parameter back in, giving tools static null checking.
+Reference: https://jspecify.dev
+
+```java
+@NullMarked
+class MyMathWithNullability {
+    public void process(@Nullable String input) {
+        if (input != null) System.out.println(input);
+    }
+}
+```
+
+### Feature 4 - Enhanced Timeout Support (`@Timeout`)
+Fails a test if it runs longer than the limit - good for catching slow regressions.
+Reference: https://docs.junit.org/6.1.0/writing-tests/timeouts.html
+
+```java
+@Test
+@Timeout(value = 2, unit = TimeUnit.SECONDS)
+void calculateSum_WithTimeout() {
+    assertEquals(6, math.calculateSum(new int[]{1, 2, 3}));
+}
+```
+
+### Feature 5 - Built-in Extensions: System Properties
+Set/restore JVM system properties around a test using the built-in extension.
+Reference: https://docs.junit.org/6.1.0/writing-tests/built-in-extensions.html#system-properties
+
+```java
+@Test
+void testWithSystemProperty() {
+    System.setProperty("test.mode", "junit6");
+    assertEquals(6, math.calculateSum(new int[]{1, 2, 3}));
+}
+```
+
+### Feature 6 - Default Locale and TimeZone
+Pin a `Locale`/`TimeZone` for tests so results don't depend on the machine running them.
+Reference: https://docs.junit.org/6.1.0/writing-tests/built-in-extensions.html#DefaultLocaleAndTimeZone
+
+```java
+@Test
+void testWithUSLocale() {
+    Locale.setDefault(Locale.US);
+    assertEquals(6, new MyMath().calculateSum(new int[]{1, 2, 3}));
+}
+```
+
+### Feature 7 - Deterministic `@Nested` Class Ordering (`@TestMethodOrder`)
+Groups related tests with `@Nested` and runs them in a predictable, declared order.
+Reference: https://docs.junit.org/6.1.0/writing-tests/nested-tests.html
+
+```java
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+class MyMathNestedOrderingTest {
+    @Nested
+    @DisplayName("A: First Nested Class")
+    class FirstNestedTest {
+        @Test void test() { assertEquals(6, math.calculateSum(new int[]{1, 2, 3})); }
+    }
+}
+```
+
+---
+
+## Dependencies I added
+
+All of this lives in the new `pom.xml`. Nothing else in the repo changed.
+
+| Dependency | Coordinates | Why |
+|---|---|---|
+| JUnit BOM | `org.junit:junit-bom:6.0.3` (imported) | Keeps every JUnit artifact on one matching version. |
+| JUnit Jupiter | `org.junit.jupiter:junit-jupiter` (test scope) | Aggregator - brings in `junit-jupiter-api`, `junit-jupiter-params` (needed for the parameterized tests/class) and `junit-jupiter-engine`. |
+| Maven Surefire | `maven-surefire-plugin:3.5.4` | Runs the JUnit tests during `mvn test`. |
+
+The version is set once at the top of the pom:
+
+```xml
+<junit.version>6.0.3</junit.version>
+<surefire.version>3.5.4</surefire.version>
+<maven.compiler.release>17</maven.compiler.release>
+```
+
+---
+
+## Before / after
 
 | | Before | After |
 |---|---|---|
-| Tests | 6 | 27 (1 intentionally skipped) |
+| Tests | 6 | 33 (1 intentionally skipped) |
 | Production code | `MyMath.calculateSum` | `MyMath.calculateSum` (unchanged) |
-| Jupiter features shown | `@Test`, lifecycle, basic asserts | + `@DisplayName`, `@ParameterizedTest`, `@ValueSource`, `@CsvSource`, `assertThrows`, `assertAll`, `assertTimeout`, `assumeTrue`, `@RepeatedTest`, `@Disabled`, `@Nested`, `@Tag` |
+| Annotations / features | `@Test`, lifecycle, basic asserts | + `@DisplayName`, `@ParameterizedTest`, `@ValueSource`, `@CsvSource`, **`@ParameterizedClass` + `@Parameter`**, `assertThrows`, `assertAll`, `assertTimeout`, `assumeTrue`, `@RepeatedTest`, `@Disabled`, `@Nested`, `@Tag` |
 | Build file | none (Eclipse only) | `pom.xml` - `mvn test` works |
 | JUnit version | mixed JUnit 4 import + Jupiter | Jupiter only, pinned to 6.0.3 via the BOM |
-| `mvn test` | not possible (no pom) | BUILD SUCCESS, 27 tests, 1 skipped, 0 failures |
+| `mvn test` | not possible (no pom) | BUILD SUCCESS, 33 tests, 1 skipped, 0 failures |
 
 ---
 
-## 3. How to verify
+## How to verify
 
 ```bash
 cd master-spring-and-spring-boot/51-junit
 mvn test
 ```
 
-Expected: `Tests run: 27, Failures: 0, Errors: 0, Skipped: 1` then `BUILD SUCCESS`.
 (The one skipped test is the `@Disabled` demo in `ModernJUnit5FeaturesTest`.)
 
 ---

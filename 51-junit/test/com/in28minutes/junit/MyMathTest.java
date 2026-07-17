@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
  */
 class MyMathTest {
 
-	private MyMath math = new MyMath();
+	private final MyMath math = new MyMath();
 
 	@Test
 	void calculateSum_ThreeMemberArray() {
