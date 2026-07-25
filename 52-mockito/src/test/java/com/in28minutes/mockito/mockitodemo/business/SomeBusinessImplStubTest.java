@@ -30,7 +30,12 @@ class DataServiceStub1 implements DataService {
 	public int[] retrieveAllData() {
 		return new int[]{25, 15, 5};
 	}
-	
+
+	//Nobody wanted this. DataService grew a method, so EVERY stub has to grow with it.
+	@Override
+	public void storeGreatest(int greatestValue) {
+	}
+
 }
 
 
@@ -40,5 +45,9 @@ class DataServiceStub2 implements DataService {
 	public int[] retrieveAllData() {
 		return new int[]{35};
 	}
-	
+
+	@Override
+	public void storeGreatest(int greatestValue) {
+	}
+
 }
