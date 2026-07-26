@@ -53,7 +53,7 @@ Steps 06 to 09 close gap 1. Steps 10 to 12 close gaps 2 and 3.
 
 **No new dependencies.** `spring-boot-starter-test` already brings `mockito-core`, `mockito-junit-jupiter`, AssertJ and Hamcrest. `mockStatic()` needs no `mockito-inline` on Mockito 5 - the inline mock maker is the default.
 
-**One `pom.xml` addition, for a clean console.** Before this, every test run printed:
+**One `pom.xml` plugin, for a clean console.** Before this, every test run printed:
 
 ```
 Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
@@ -66,30 +66,21 @@ WARNING: Dynamic loading of agents will be disallowed by default in a future rel
 
 Six lines, on every run. Only the local repository path is shortened above.
 
-This is [JEP 451](https://openjdk.org/jeps/451), shipped in JDK 21: dynamic agent loading still works, but the JVM warns, and it "will be disallowed by default in a future release". The JEP asks library maintainers to load the agent at startup with `-javaagent` instead, which is what this does:
+A Java agent is a jar the JVM loads so it can rewrite classes as they are loaded. Mockito uses one to build mocks, and until now it attached that agent to the already-running JVM by itself.
+
+This is [JEP 451](https://openjdk.org/jeps/451), shipped in JDK 21: attaching a Java agent to a running JVM still works, but the JVM warns, and it "will be disallowed by default in a future release". The JEP asks library maintainers to load the agent at startup with `-javaagent` instead, which is what this does:
 
 ```xml
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-dependency-plugin</artifactId>
-    <executions>
-        <execution>
-            <goals>
-                <goal>properties</goal>
-            </goals>
-        </execution>
-    </executions>
-</plugin>
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-surefire-plugin</artifactId>
     <configuration>
-        <argLine>-javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine>
+        <argLine>-javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar -Xshare:off</argLine>
     </configuration>
 </plugin>
 ```
 
-`dependency:properties` exposes the jar path as `${org.mockito:mockito-core:jar}`. `-Xshare:off` silences the class-data-sharing warning the agent triggers. Both verified: all six lines are gone.
+`${mockito.version}` is defined by `spring-boot-starter-parent`, so the agent jar always matches the Mockito that Spring Boot pulled in. `-Xshare:off` silences the class-data-sharing warning that loading a Java agent triggers. Verified: all six lines are gone.
 
 ---
 

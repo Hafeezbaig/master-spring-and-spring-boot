@@ -38,26 +38,16 @@
 
 			<!-- Keeps the test console clean on Java 21+.
 			     Without this, every test run prints "Mockito is currently self-attaching..."
-			     plus five JVM warning lines about dynamic agent loading.
-			     dependency:properties exposes the Mockito jar path; surefire passes it as -javaagent.
-			     -Xshare:off silences the CDS warning the agent causes.
+			     plus five JVM warning lines about dynamically loaded Java agents.
+			     Loading Mockito as a -javaagent at startup is what JEP 451 asks libraries to do.
+			     mockito.version comes from spring-boot-starter-parent, so it stays in step.
+			     -Xshare:off silences the CDS warning that loading the Java agent causes.
 			     https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<executions>
-					<execution>
-						<goals>
-							<goal>properties</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
-					<argLine>-javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine>
+					<argLine>-javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar -Xshare:off</argLine>
 				</configuration>
 			</plugin>
 		</plugins>
