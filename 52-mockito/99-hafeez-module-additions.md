@@ -18,7 +18,7 @@ Verified locally, all green: `mvn test` -> **24 tests, 0 failures, 0 warnings on
 
 The module stopped at "how do I make a mock return a value". Three gaps:
 
-1. **No behaviour verification.** `verify()`, captors and spies were missing entirely. That is half of real Mockito usage.
+1. **No behaviour verification.** `verify()`, captors and spies were missing entirely, so a `void` method could not be tested at all.
 2. **The defaults have moved on.** `MockitoExtension` defaults to strict stubs, and Mockito 5 makes the inline mock maker standard, so `mockStatic()` works out of the box without PowerMock.
 3. **Spring Boot 4 removed `@MockBean`.** Anyone following the old material gets a compile error.
 
@@ -86,7 +86,7 @@ This is [JEP 451](https://openjdk.org/jeps/451), shipped in JDK 21: attaching a 
 
 ## Changes to existing files
 
-Small, and each one earns its keep.
+Three changes, each one needed by a later step.
 
 **1. `DataService` grew one method** (`main/.../business/SomeBusinessImpl.java`). Steps 06 and 08 need a call that takes an argument, so there is something to verify and capture.
 
@@ -106,7 +106,7 @@ interface DataService {
 }
 ```
 
-**2. Both stubs had to grow with it** (`test/.../business/SomeBusinessImplStubTest.java`). This is a free win for **Step 02**: the step currently *claims* stubs are a maintenance burden. Now it can show it live.
+**2. Both stubs had to grow with it** (`test/.../business/SomeBusinessImplStubTest.java`). This helps **Step 02**: the step currently *claims* stubs are a maintenance burden, and now it can demonstrate that on screen.
 
 ```java
 	//DataService grew one method, so every stub has to implement it.
@@ -263,7 +263,7 @@ class SomeBusinessImplBddTest {
 }
 ```
 
-- Nothing new is being tested. Only the vocabulary changes, and the `//given //when //then` comments become the structure.
+- Nothing new is being tested. Only the vocabulary changes, and the `//given //when //then` comments mark the three parts of every test.
 - `when` is an overloaded word in Mockito: it means "stub this" but reads as "the action". BDD removes the clash.
 - This is also where AssertJ's `assertThat(result).isEqualTo(25)` comes in. It ships inside `spring-boot-starter-test`, so there is nothing to add.
 - Worth saying out loud: the module readme already asks you to add `org.mockito.BDDMockito` to Eclipse Favorites. This is the step that uses it.
@@ -334,7 +334,7 @@ class SomeBusinessImplCaptorTest {
 
 - Order matters: `capture()` goes **inside** `verify()`, and you read the value **after**.
 - `getValue()` is the last call. `getAllValues()` is every call, in order - that is the second test.
-- The chained `thenReturn().thenReturn()` is a callback to Step 05.
+- The chained `thenReturn().thenReturn()` revisits Step 05.
 - `@Captor` saves you writing `ArgumentCaptor.forClass(Integer.class)`.
 
 Docs: [ArgumentCaptor](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/ArgumentCaptor.html)
@@ -400,7 +400,7 @@ class SpyTest {
 ```
 
 - Runs the same three lines against a mock and a spy back to back. `size()` is `0` on the mock and `1` on the spy. That contrast is the whole step.
-- Third test is the surprise: you can stub a spy, and the stub beats the real method. Everything you do not stub stays real.
+- Third test is the surprise: you can stub a spy, and the stub takes precedence over the real method. Everything you do not stub stays real.
 - Say the caveat: a spy means you are testing real code you probably meant to isolate. Prefer a mock. `@Spy` exists as the annotation form.
 
 Docs: [Mockito javadoc](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html)
@@ -462,7 +462,7 @@ org.mockito.exceptions.misusing.UnnecessaryStubbingException:
 Please remove unnecessary stubbings or use 'lenient' strictness.
 ```
 
-- Put it back, green again. Then say why: an unused stub is setup that no longer matches the code, and strictness surfaces it instead of letting it rot.
+- Put it back, green again. Then say why: an unused stub is setup that no longer matches the code, and strictness reports it instead of leaving it in place.
 - Worth two minutes, because it is a common surprise for anyone following older Mockito material.
 - Mention the sibling error `PotentialStubbingProblem`: you stubbed `get(0)` but the code called `get(1)`. Under lenient strictness that call quietly returns `null`; under strict stubs it fails.
 
@@ -509,7 +509,7 @@ class MockStaticTest {
 
 - Freezing the clock is the clearest real-world case. Date-dependent code was awkward to test before this.
 - `try`-with-resources is not decoration. The static mock is global to the thread until closed, so leaking it breaks unrelated tests.
-- The last line, outside the block, proves the scoping. Worth pointing at.
+- The last line, outside the block, proves the scoping. Worth pointing out on screen.
 - The headline: **`mockito-inline` and PowerMock are no longer needed.** If the old advanced module still teaches PowerMock for statics, this replaces it.
 - The same mechanism handles final classes and final methods, which the subclass mock maker cannot.
 
@@ -567,12 +567,12 @@ class SomeBusinessImplMockitoBeanTest {
 }
 ```
 
-- The bridge out of this module. Every step so far ran without Spring. This one starts a context.
+- Every step so far ran without Spring. This one starts a Spring context, so it is the bridge to the Spring Boot testing material.
 - `@Mock` vs `@MockitoBean` in one line: same Mockito mock, but `@MockitoBean` registers it in the Spring container so `@Autowired` beans receive it.
 - **Flag the breaking change clearly.** `@MockBean` and `@SpyBean` are gone in Spring Boot 4, not just deprecated - the classes are no longer in `spring-boot-test`. Deprecated since Boot 3.4, removed in 4.
 - Watch the import. `org.springframework.test.context.bean.override.mockito.MockitoBean` - it moved to `spring-test`.
 - Not a 1-to-1 swap: `@MockitoBean` uses replace-or-create, `@MockitoSpyBean` wraps the existing bean.
-- The `@TestConfiguration` is only here because `SomeBusinessImpl` is a plain class in this module. Say so, and point at the Spring Boot unit testing module for the real treatment.
+- The `@TestConfiguration` is only here because `SomeBusinessImpl` is a plain class in this module. Say so, and point at the Spring Boot unit testing module, which covers this properly.
 
 Docs: [@MockitoBean and @MockitoSpyBean](https://docs.spring.io/spring-framework/reference/testing/annotations/integration-spring/annotation-mockitobean.html) | [Boot 4 migration guide](https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Migration-Guide)
 
