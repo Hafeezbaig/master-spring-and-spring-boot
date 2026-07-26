@@ -11,14 +11,14 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-//A mock is an empty shell - it forgets everything unless you stub it.
-//A spy is the REAL object - it keeps working, and you can still verify and stub it.
-//Rule of thumb: reach for a mock first. Use a spy for legacy code you cannot redesign.
+//A mock does nothing unless you stub it.
+//A spy wraps a real object: the real behaviour runs, and you can still stub and verify it.
+//Prefer a mock. A spy is for code you cannot redesign.
 class SpyTest {
 
 	@Test
-	void mock_forgetsEverything() {
-		List<String> listMock = mock();				//Mockito 5 infers the type - no List.class
+	void mock_ignoresTheRealBehaviour() {
+		List<String> listMock = mock();				//the type is inferred, no List.class needed
 
 		listMock.add("SomeString");
 

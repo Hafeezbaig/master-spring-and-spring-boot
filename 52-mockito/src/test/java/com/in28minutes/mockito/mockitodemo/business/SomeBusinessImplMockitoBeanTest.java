@@ -10,10 +10,9 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-//@Mock gives you a mock in a plain JUnit test.
-//@MockitoBean puts that mock INSIDE the Spring context, replacing (or creating) the bean.
-//Spring Boot 4 REMOVED @MockBean and @SpyBean - it is @MockitoBean and @MockitoSpyBean now,
-//and they come from spring-test, not spring-boot-test. Watch the import.
+//@Mock creates a mock for a plain JUnit test. @MockitoBean puts one in the Spring context,
+//so injected beans receive it. Spring Boot 4 removed @MockBean and @SpyBean - use
+//@MockitoBean and @MockitoSpyBean, imported from spring-test.
 @SpringBootTest
 class SomeBusinessImplMockitoBeanTest {
 

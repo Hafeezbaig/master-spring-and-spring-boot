@@ -1,6 +1,6 @@
 # 52-mockito - Module Additions (Steps 06 to 12)
 
-Recording guide for the 7 steps added on top of the existing "First 5 Steps in Mockito".
+Recording guide for the 7 steps added on top of the original 5-step Mockito module.
 
 Verified locally, all green: `mvn test` -> **24 tests, 0 failures, 0 warnings on the console**.
 
@@ -19,7 +19,7 @@ Verified locally, all green: `mvn test` -> **24 tests, 0 failures, 0 warnings on
 The module stopped at "how do I make a mock return a value". Three gaps:
 
 1. **No behaviour verification.** `verify()`, captors and spies were missing entirely. That is half of real Mockito usage.
-2. **Mockito 5 changed the defaults.** Strict stubs are on by default, and the inline mock maker is now standard, so `mockStatic()` works out of the box. PowerMock is no longer needed for statics.
+2. **The defaults have moved on.** `MockitoExtension` defaults to strict stubs, and Mockito 5 makes the inline mock maker standard, so `mockStatic()` works out of the box without PowerMock.
 3. **Spring Boot 4 removed `@MockBean`.** Anyone following the old material gets a compile error.
 
 Steps 06 to 09 close gap 1. Steps 10 to 12 close gaps 2 and 3.
@@ -56,13 +56,17 @@ Steps 06 to 09 close gap 1. Steps 10 to 12 close gaps 2 and 3.
 **One `pom.xml` addition, for a clean console.** Before this, every test run printed:
 
 ```
-Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK.
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
 OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
-WARNING: A Java agent has been loaded dynamically (byte-buddy-agent-1.18.10.jar)
+WARNING: A Java agent has been loaded dynamically (.../net/bytebuddy/byte-buddy-agent/1.18.10/byte-buddy-agent-1.18.10.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
 WARNING: Dynamic loading of agents will be disallowed by default in a future release
 ```
 
-Ugly on camera, and it will become a hard error in a future JDK. The fix hands Mockito's jar to the JVM as a proper `-javaagent`:
+Six lines, on every run. Only the local repository path is shortened above.
+
+This is [JEP 451](https://openjdk.org/jeps/451), shipped in JDK 21: dynamic agent loading still works, but the JVM warns, and it "will be disallowed by default in a future release". The JEP asks library maintainers to load the agent at startup with `-javaagent` instead, which is what this does:
 
 ```xml
 <plugin>
@@ -85,7 +89,7 @@ Ugly on camera, and it will become a hard error in a future JDK. The fix hands M
 </plugin>
 ```
 
-`dependency:properties` exposes the jar path as `${org.mockito:mockito-core:jar}`. `-Xshare:off` silences the class-data-sharing warning the agent triggers. Both verified: the 4 warnings above are gone.
+`dependency:properties` exposes the jar path as `${org.mockito:mockito-core:jar}`. `-Xshare:off` silences the class-data-sharing warning the agent triggers. Both verified: all six lines are gone.
 
 ---
 
@@ -96,7 +100,7 @@ Small, and each one earns its keep.
 **1. `DataService` grew one method** (`main/.../business/SomeBusinessImpl.java`). Steps 06 and 08 need a call that takes an argument, so there is something to verify and capture.
 
 ```java
-	//Added in Step 06 - a void call we can verify and an argument we can capture
+	//Step 06 - a void call to verify, and an argument to capture
 	public void storeTheGreatestFromAllData() {
 		dataService.storeGreatest(findTheGreatestFromAllData());
 	}
@@ -114,15 +118,15 @@ interface DataService {
 **2. Both stubs had to grow with it** (`test/.../business/SomeBusinessImplStubTest.java`). This is a free win for **Step 02**: the step currently *claims* stubs are a maintenance burden. Now it can show it live.
 
 ```java
-	//Nobody wanted this. DataService grew a method, so EVERY stub has to grow with it.
+	//DataService grew one method, so every stub has to implement it.
 	@Override
 	public void storeGreatest(int greatestValue) {
 	}
 ```
 
-> Talking point for Step 02: "I added one method to the interface. Look how many stub classes just went red. A mock would not have cared."
+> Talking point for Step 02: "I added one method to the interface, and every stub class went red. A mock needs no such change."
 
-**3. `ListTest` uses generics now** (`test/.../list/ListTest.java`). `List listMock = mock(List.class)` was raw, so Eclipse showed yellow warnings on screen. Mockito 5 infers the type:
+**3. `ListTest` uses generics now** (`test/.../list/ListTest.java`). `List listMock = mock(List.class)` was raw, so Eclipse showed yellow warnings on screen. Mockito infers the type from the variable, so the class literal is not needed:
 
 ```java
 		List<String> listMock = mock();
@@ -155,8 +159,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-//Stubbing answers "what does the mock return?"
-//Verifying answers "was the mock actually called - how, and how often?"
+//Stubbing controls what the mock returns.
+//Verifying checks whether the mock was called, with what, and how often.
 @ExtendWith(MockitoExtension.class)
 class SomeBusinessImplVerifyTest {
 
@@ -206,7 +210,7 @@ class SomeBusinessImplVerifyTest {
 - Needed whenever the method returns `void` - there is no return value to assert on.
 - Live demo: change `verify(dataServiceMock).storeGreatest(25)` to `storeGreatest(15)` and read the failure message. Mockito prints the actual argument it saw.
 
-Docs: [Mockito.verify](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#verification)
+Docs: [Mockito javadoc](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html)
 
 ---
 
@@ -228,9 +232,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-//Same tests as before, written the way most teams write them today:
-//given (setup) / when (call) / then (assert). when-thenReturn becomes given-willReturn,
-//and verify becomes then-should.
+//The same tests in given/when/then form.
+//when-thenReturn becomes given-willReturn, and verify becomes then-should.
 @ExtendWith(MockitoExtension.class)
 class SomeBusinessImplBddTest {
 
@@ -271,7 +274,7 @@ class SomeBusinessImplBddTest {
 
 - Nothing new is being tested. Only the vocabulary changes, and the `//given //when //then` comments become the structure.
 - `when` is an overloaded word in Mockito: it means "stub this" but reads as "the action". BDD removes the clash.
-- This is also where AssertJ's `assertThat(result).isEqualTo(25)` comes in. It is already on the classpath and it is what Spring Boot's own docs use.
+- This is also where AssertJ's `assertThat(result).isEqualTo(25)` comes in. It ships inside `spring-boot-starter-test`, so there is nothing to add.
 - Worth saying out loud: the module readme already asks you to add `org.mockito.BDDMockito` to Eclipse Favorites. This is the step that uses it.
 
 Docs: [BDDMockito](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/BDDMockito.html) | [AssertJ](https://assertj.github.io/doc/)
@@ -298,9 +301,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-//verify(mock).storeGreatest(25) checks a value we already guessed.
-//A captor grabs whatever the code actually passed - then we assert on it.
-//Use it when the argument is built inside the method and you cannot predict it.
+//verify(mock).storeGreatest(25) only works when we already know the value.
+//A captor records what the code actually passed, for arguments built inside the method.
 @ExtendWith(MockitoExtension.class)
 class SomeBusinessImplCaptorTest {
 
@@ -335,10 +337,11 @@ class SomeBusinessImplCaptorTest {
 		verify(dataServiceMock, times(2)).storeGreatest(greatestValueCaptor.capture());
 		assertThat(greatestValueCaptor.getAllValues()).containsExactly(25, 35);
 	}
+
 }
 ```
 
-- Order matters and it is the thing people get wrong: `capture()` goes **inside** `verify()`, and you read the value **after**.
+- Order matters: `capture()` goes **inside** `verify()`, and you read the value **after**.
 - `getValue()` is the last call. `getAllValues()` is every call, in order - that is the second test.
 - The chained `thenReturn().thenReturn()` is a callback to Step 05.
 - `@Captor` saves you writing `ArgumentCaptor.forClass(Integer.class)`.
@@ -365,14 +368,14 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-//A mock is an empty shell - it forgets everything unless you stub it.
-//A spy is the REAL object - it keeps working, and you can still verify and stub it.
-//Rule of thumb: reach for a mock first. Use a spy for legacy code you cannot redesign.
+//A mock does nothing unless you stub it.
+//A spy wraps a real object: the real behaviour runs, and you can still stub and verify it.
+//Prefer a mock. A spy is for code you cannot redesign.
 class SpyTest {
 
 	@Test
-	void mock_forgetsEverything() {
-		List<String> listMock = mock();				//Mockito 5 infers the type - no List.class
+	void mock_ignoresTheRealBehaviour() {
+		List<String> listMock = mock();				//the type is inferred, no List.class needed
 
 		listMock.add("SomeString");
 
@@ -409,11 +412,11 @@ class SpyTest {
 - Third test is the surprise: you can stub a spy, and the stub beats the real method. Everything you do not stub stays real.
 - Say the caveat: a spy means you are testing real code you probably meant to isolate. Prefer a mock. `@Spy` exists as the annotation form.
 
-Docs: [Mockito.spy](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#13)
+Docs: [Mockito javadoc](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html)
 
 ---
 
-## Step 10 - Strict Stubs, and the error everybody hits
+## Step 10 - Strict Stubs and UnnecessaryStubbingException
 
 `src/test/java/com/in28minutes/mockito/mockitodemo/business/SomeBusinessImplStrictStubsTest.java`
 
@@ -430,10 +433,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-//MockitoExtension is STRICT by default. Two errors you will meet:
-// - UnnecessaryStubbingException  : you stubbed something the code never called
-// - PotentialStubbingProblem      : the code called your stub with a different argument
-//This is a feature - it deletes dead test code for you. lenient() opts out, per stub.
+//MockitoExtension defaults to strict stubs. Two failures it reports:
+// - UnnecessaryStubbingException : you stubbed something the code never called
+// - PotentialStubbingProblem     : the code called your stub with a different argument
+//lenient() opts a single stub out.
 @ExtendWith(MockitoExtension.class)
 class SomeBusinessImplStrictStubsTest {
 
@@ -468,9 +471,9 @@ org.mockito.exceptions.misusing.UnnecessaryStubbingException:
 Please remove unnecessary stubbings or use 'lenient' strictness.
 ```
 
-- Put it back, green again. Then say why: an unused stub is a lie in your test, and strictness deletes lies.
-- This is the single most common "my test used to work" question on modern Mockito. Worth two minutes.
-- Mention the sibling error `PotentialStubbingProblem`: you stubbed `get(0)` but the code called `get(1)`. Old Mockito returned `null` silently, Mockito 5 fails loudly.
+- Put it back, green again. Then say why: an unused stub is setup that no longer matches the code, and strictness surfaces it instead of letting it rot.
+- Worth two minutes, because it is a common surprise for anyone following older Mockito material.
+- Mention the sibling error `PotentialStubbingProblem`: you stubbed `get(0)` but the code called `get(1)`. Under lenient strictness that call quietly returns `null`; under strict stubs it fails.
 
 Docs: [UnnecessaryStubbingException](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/exceptions/misusing/UnnecessaryStubbingException.html) | [Strictness](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/quality/Strictness.html)
 
@@ -491,10 +494,9 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-//Static methods used to need PowerMock. Not any more.
-//Mockito 5 makes the inline mock maker the default, so mockStatic() is built in -
-//no extra dependency, no PowerMock, and it mocks final classes and methods too.
-//The mock is scoped: it lives inside the try block, on this thread only. Always close it.
+//Static methods once required PowerMock. Mockito 5 makes the inline mock maker the default,
+//so mockStatic() works with no extra dependency, as does mocking final classes.
+//The mock is scoped to this thread and this try block, so it has to be closed.
 class MockStaticTest {
 
 	@Test
@@ -514,13 +516,13 @@ class MockStaticTest {
 }
 ```
 
-- Freezing the clock is the example everybody recognises. Testing anything date-dependent used to be genuinely painful.
+- Freezing the clock is the clearest real-world case. Date-dependent code was awkward to test before this.
 - `try`-with-resources is not decoration. The static mock is global to the thread until closed, so leaking it breaks unrelated tests.
 - The last line, outside the block, proves the scoping. Worth pointing at.
 - The headline: **`mockito-inline` and PowerMock are no longer needed.** If the old advanced module still teaches PowerMock for statics, this replaces it.
-- Same mechanism handles final classes and final methods, which old Mockito could not touch.
+- The same mechanism handles final classes and final methods, which the subclass mock maker cannot.
 
-Docs: [mockStatic](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#mockito-inline) | [MockedStatic](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/MockedStatic.html)
+Docs: [MockedStatic](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/MockedStatic.html)
 
 ---
 
@@ -541,10 +543,9 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-//@Mock gives you a mock in a plain JUnit test.
-//@MockitoBean puts that mock INSIDE the Spring context, replacing (or creating) the bean.
-//Spring Boot 4 REMOVED @MockBean and @SpyBean - it is @MockitoBean and @MockitoSpyBean now,
-//and they come from spring-test, not spring-boot-test. Watch the import.
+//@Mock creates a mock for a plain JUnit test. @MockitoBean puts one in the Spring context,
+//so injected beans receive it. Spring Boot 4 removed @MockBean and @SpyBean - use
+//@MockitoBean and @MockitoSpyBean, imported from spring-test.
 @SpringBootTest
 class SomeBusinessImplMockitoBeanTest {
 
@@ -588,8 +589,8 @@ Docs: [@MockitoBean and @MockitoSpyBean](https://docs.spring.io/spring-framework
 
 ## Not included, and why
 
-- **Hamcrest matchers.** AssertJ is on the classpath already, reads better, and is what Spring Boot's docs use. Step 07 uses AssertJ instead.
-- **PowerMock.** Obsolete. Step 11 replaces it.
+- **Hamcrest matchers.** AssertJ ships in the same starter and reads better. Step 07 uses AssertJ instead.
+- **PowerMock.** No longer needed for static or final mocking. Step 11 covers that with plain Mockito.
 - **`mockConstruction()`.** Same mechanism as Step 11, narrow use. Mention it in passing.
 - **`@MockitoSpyBean` demo.** Nothing in this module has a real bean worth wrapping. Named in Step 12, demoed in the Spring Boot unit testing module.
 

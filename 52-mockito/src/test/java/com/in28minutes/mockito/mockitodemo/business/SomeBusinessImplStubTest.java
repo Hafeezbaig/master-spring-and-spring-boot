@@ -31,7 +31,7 @@ class DataServiceStub1 implements DataService {
 		return new int[]{25, 15, 5};
 	}
 
-	//Nobody wanted this. DataService grew a method, so EVERY stub has to grow with it.
+	//DataService grew one method, so every stub has to implement it.
 	@Override
 	public void storeGreatest(int greatestValue) {
 	}

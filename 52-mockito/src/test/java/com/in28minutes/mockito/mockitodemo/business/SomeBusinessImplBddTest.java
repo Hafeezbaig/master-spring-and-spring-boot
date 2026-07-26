@@ -11,9 +11,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-//Same tests as before, written the way most teams write them today:
-//given (setup) / when (call) / then (assert). when-thenReturn becomes given-willReturn,
-//and verify becomes then-should.
+//The same tests in given/when/then form.
+//when-thenReturn becomes given-willReturn, and verify becomes then-should.
 @ExtendWith(MockitoExtension.class)
 class SomeBusinessImplBddTest {
 

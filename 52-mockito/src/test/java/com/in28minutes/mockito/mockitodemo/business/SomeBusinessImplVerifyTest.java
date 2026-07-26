@@ -14,8 +14,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-//Stubbing answers "what does the mock return?"
-//Verifying answers "was the mock actually called - how, and how often?"
+//Stubbing controls what the mock returns.
+//Verifying checks whether the mock was called, with what, and how often.
 @ExtendWith(MockitoExtension.class)
 class SomeBusinessImplVerifyTest {
 

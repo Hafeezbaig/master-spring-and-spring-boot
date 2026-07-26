@@ -13,9 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-//verify(mock).storeGreatest(25) checks a value we already guessed.
-//A captor grabs whatever the code actually passed - then we assert on it.
-//Use it when the argument is built inside the method and you cannot predict it.
+//verify(mock).storeGreatest(25) only works when we already know the value.
+//A captor records what the code actually passed, for arguments built inside the method.
 @ExtendWith(MockitoExtension.class)
 class SomeBusinessImplCaptorTest {
 

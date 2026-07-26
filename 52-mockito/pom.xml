@@ -38,7 +38,7 @@
 
 			<!-- Keeps the test console clean on Java 21+.
 			     Without this, every test run prints "Mockito is currently self-attaching..."
-			     plus 4 JVM warnings about dynamic agent loading.
+			     plus five JVM warning lines about dynamic agent loading.
 			     dependency:properties exposes the Mockito jar path; surefire passes it as -javaagent.
 			     -Xshare:off silences the CDS warning the agent causes.
 			     https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html -->

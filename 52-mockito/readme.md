@@ -1,4 +1,4 @@
-# First 5 Steps in Mockito
+# First Steps in Mockito
 
 Mockito is the most famous mocking framework in Java.
 
@@ -30,13 +30,13 @@ Mockito is the most famous mocking framework in Java.
 
 ## Easier Static Imports
 - Window > Preferences > Java > Editor > Content Assist > Favorites
-- org.junit.Assert
-- org.mockito.BDDMockito
+- org.junit.jupiter.api.Assertions
 - org.mockito.Mockito
-- org.hamcrest.Matchers
-- org.hamcrest.CoreMatchers
-- More information 
-- Visit Mockito Official Documentation - [Mockito Documentation] (http://site.mockito.org/mockito/docs/current/org/mockito/Mockito.html)
+- org.mockito.BDDMockito
+- org.mockito.ArgumentMatchers
+- org.assertj.core.api.Assertions
+- More information
+- Visit Mockito Official Documentation - [Mockito Documentation](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html)
 
 ## Step by Step Details
 
@@ -46,6 +46,15 @@ Mockito is the most famous mocking framework in Java.
 - Step 03 - Writing your first Mockito test with Mocks
 - Step 04 - Simplifying Tests with Mockito Annotations - @Mock, @InjectMocks
 - Step 05 - Exploring Mocks further by Mocking List interface
+- Step 06 - Verifying calls on Mocks - verify, times, never, verifyNoMoreInteractions
+- Step 07 - BDD Style - given, willReturn, then, should
+- Step 08 - Capturing arguments with ArgumentCaptor
+- Step 09 - Introduction to Spy - spy vs mock
+- Step 10 - Strict Stubs and UnnecessaryStubbingException
+- Step 11 - Mocking static methods, without PowerMock
+- Step 12 - Mocking a Spring Bean with @MockitoBean
+
+Code and talking points for Steps 06 to 12: [99-hafeez-module-additions.md](99-hafeez-module-additions.md)
 <!---
 Current Directory : /Users/rangakaranam/Ranga/git/00.courses/spring-boot-master-class/04.Mockito-Introduction-In-5-Steps-V2
 -->
@@ -93,9 +102,34 @@ Current Directory : /Users/rangakaranam/Ranga/git/00.courses/spring-boot-master-
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+
+			<!-- Keeps the test console clean on Java 21+.
+			     Without this, every test run prints "Mockito is currently self-attaching..."
+			     plus five JVM warning lines about dynamic agent loading.
+			     dependency:properties exposes the Mockito jar path; surefire passes it as -javaagent.
+			     -Xshare:off silences the CDS warning the agent causes.
+			     https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>properties</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<argLine>-javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
-	
+
 
 </project>
 ```
@@ -127,7 +161,7 @@ package com.in28minutes.mockito.mockitodemo.business;
 
 public class SomeBusinessImpl {
 	
-	private DataService dataService;
+	private final DataService dataService;
 	
 	public SomeBusinessImpl(DataService dataService) {
 		super();
@@ -144,12 +178,18 @@ public class SomeBusinessImpl {
 		return greatestValue;
 	}
 
+	//Step 06 - a void call to verify, and an argument to capture
+	public void storeTheGreatestFromAllData() {
+		dataService.storeGreatest(findTheGreatestFromAllData());
+	}
+
 }
 
 interface DataService {
 	int[] retrieveAllData();
-	
-	
+
+	void storeGreatest(int greatestValue);
+
 }
 ```
 ---
@@ -260,7 +300,12 @@ class DataServiceStub1 implements DataService {
 	public int[] retrieveAllData() {
 		return new int[]{25, 15, 5};
 	}
-	
+
+	//DataService grew one method, so every stub has to implement it.
+	@Override
+	public void storeGreatest(int greatestValue) {
+	}
+
 }
 
 
@@ -270,7 +315,11 @@ class DataServiceStub2 implements DataService {
 	public int[] retrieveAllData() {
 		return new int[]{35};
 	}
-	
+
+	@Override
+	public void storeGreatest(int greatestValue) {
+	}
+
 }
 ```
 ---
@@ -289,13 +338,13 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class ListTest {
-	
+class ListTest {
+
 	@Test
 	void simpleTest() {
-		List listMock = mock(List.class);
+		List<String> listMock = mock();
 		//listMock.size() => 3
-		when(listMock.size()).thenReturn(3);	
+		when(listMock.size()).thenReturn(3);
 		assertEquals(3, listMock.size());
 		assertEquals(3, listMock.size());
 		assertEquals(3, listMock.size());
@@ -304,9 +353,9 @@ public class ListTest {
 
 	@Test
 	void multipleReturns() {
-		List listMock = mock(List.class);
+		List<String> listMock = mock();
 		//listMock.size() => 3
-		when(listMock.size()).thenReturn(1).thenReturn(2);	
+		when(listMock.size()).thenReturn(1).thenReturn(2);
 		assertEquals(1, listMock.size());
 		assertEquals(2, listMock.size());
 		assertEquals(2, listMock.size());
@@ -315,18 +364,16 @@ public class ListTest {
 	
 	@Test
 	void specificParameters() {
-		List listMock = mock(List.class);
-		//listMock.size() => 3
-		when(listMock.get(0)).thenReturn("SomeString");	
+		List<String> listMock = mock();
+		when(listMock.get(0)).thenReturn("SomeString");
 		assertEquals("SomeString", listMock.get(0));
 		assertEquals(null, listMock.get(1));
 	}
 
 	@Test
 	void genericParameters() {
-		List listMock = mock(List.class);
-		//listMock.size() => 3
-		when(listMock.get(Mockito.anyInt())).thenReturn("SomeOtherString");	
+		List<String> listMock = mock();
+		when(listMock.get(Mockito.anyInt())).thenReturn("SomeOtherString");
 		assertEquals("SomeOtherString", listMock.get(0));
 		assertEquals("SomeOtherString", listMock.get(1));
 	}
@@ -334,3 +381,23 @@ public class ListTest {
 }
 ```
 ---
+
+Steps 06 to 12 add 7 more test files. Code and talking points are in [99-hafeez-module-additions.md](99-hafeez-module-additions.md).
+
+---
+
+## References
+
+Verified against Spring Boot 4.1.0, Java 25, Mockito 5.23.0, JUnit Jupiter 6.0.3.
+
+- [Mockito javadoc](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html) - the main Mockito documentation
+- [BDDMockito](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/BDDMockito.html) - Step 07
+- [ArgumentCaptor](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/ArgumentCaptor.html) - Step 08
+- [UnnecessaryStubbingException](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/exceptions/misusing/UnnecessaryStubbingException.html) - Step 10
+- [MockedStatic](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/MockedStatic.html) - Step 11
+- [@MockitoBean and @MockitoSpyBean](https://docs.spring.io/spring-framework/reference/testing/annotations/integration-spring/annotation-mockitobean.html) - Step 12
+- [Spring Boot 4.0 migration guide](https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Migration-Guide) - why `@MockBean` and `@SpyBean` are gone
+- [Spring Boot testing reference](https://docs.spring.io/spring-boot/reference/testing/index.html)
+- [JUnit 5 user guide](https://junit.org/junit5/docs/current/user-guide/)
+- [AssertJ documentation](https://assertj.github.io/doc/)
+- [JEP 451](https://openjdk.org/jeps/451) - why the pom passes Mockito to the JVM as a `-javaagent`

@@ -10,10 +10,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-//MockitoExtension is STRICT by default. Two errors you will meet:
-// - UnnecessaryStubbingException  : you stubbed something the code never called
-// - PotentialStubbingProblem      : the code called your stub with a different argument
-//This is a feature - it deletes dead test code for you. lenient() opts out, per stub.
+//MockitoExtension defaults to strict stubs. Two failures it reports:
+// - UnnecessaryStubbingException : you stubbed something the code never called
+// - PotentialStubbingProblem     : the code called your stub with a different argument
+//lenient() opts a single stub out.
 @ExtendWith(MockitoExtension.class)
 class SomeBusinessImplStrictStubsTest {
 

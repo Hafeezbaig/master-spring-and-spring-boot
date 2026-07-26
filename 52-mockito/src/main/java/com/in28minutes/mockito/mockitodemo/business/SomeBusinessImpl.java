@@ -19,7 +19,7 @@ public class SomeBusinessImpl {
 		return greatestValue;
 	}
 
-	//Added in Step 06 - a void call we can verify and an argument we can capture
+	//Step 06 - a void call to verify, and an argument to capture
 	public void storeTheGreatestFromAllData() {
 		dataService.storeGreatest(findTheGreatestFromAllData());
 	}

@@ -8,10 +8,9 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-//Static methods used to need PowerMock. Not any more.
-//Mockito 5 makes the inline mock maker the default, so mockStatic() is built in -
-//no extra dependency, no PowerMock, and it mocks final classes and methods too.
-//The mock is scoped: it lives inside the try block, on this thread only. Always close it.
+//Static methods once required PowerMock. Mockito 5 makes the inline mock maker the default,
+//so mockStatic() works with no extra dependency, as does mocking final classes.
+//The mock is scoped to this thread and this try block, so it has to be closed.
 class MockStaticTest {
 
 	@Test
