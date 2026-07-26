@@ -354,7 +354,7 @@ class ListTest {
 	@Test
 	void multipleReturns() {
 		List<String> listMock = mock();
-		//listMock.size() => 3
+		//listMock.size() => 1, then 2 for every call after that
 		when(listMock.size()).thenReturn(1).thenReturn(2);
 		assertEquals(1, listMock.size());
 		assertEquals(2, listMock.size());
