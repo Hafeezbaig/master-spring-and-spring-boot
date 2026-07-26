@@ -15,16 +15,18 @@ class MockStaticTest {
 
 	@Test
 	void mockStatic_freezeTheClock() {
-		LocalDate fixedDate = LocalDate.of(2000, 1, 1);		//built before the mock exists
+		//a real LocalDate, built before the static mock exists
+		LocalDate fixedDate = LocalDate.of(2000, 1, 1);
 
 		try (MockedStatic<LocalDate> mockedLocalDate = mockStatic(LocalDate.class)) {
 			mockedLocalDate.when(LocalDate::now).thenReturn(fixedDate);
 
 			assertThat(LocalDate.now()).isEqualTo(fixedDate);
-			mockedLocalDate.verify(LocalDate::now);			//statics can be verified as well
+			mockedLocalDate.verify(LocalDate::now);   //statics can be verified as well
 		}
 
-		assertThat(LocalDate.now()).isNotEqualTo(fixedDate);	//real behaviour is back
+		//outside the try block the mock is closed, so the real behavior is back
+		assertThat(LocalDate.now()).isNotEqualTo(fixedDate);
 	}
 
 }

@@ -35,7 +35,7 @@ class SomeBusinessImplStrictStubsTest {
 	void stubThatIsNeverUsed_needsLenient() {
 		lenient().when(dataServiceMock.retrieveAllData()).thenReturn(new int[]{25, 15, 5});
 
-		assertThat(businessImpl).isNotNull();		//we never call retrieveAllData()
+		assertThat(businessImpl).isNotNull();  //we never call retrieveAllData()
 	}
 
 }

@@ -40,7 +40,7 @@ Mockito is the most famous mocking framework in Java.
 
 ## Step by Step Details
 
-- Step 00 - Introduction to Section - Mockito in 5 Steps
+- Step 00 - Introduction to Section - Mockito in 12 Steps
 - Step 01 - Setting up a Spring Boot Project
 - Step 02 - Understanding problems with Stubs
 - Step 03 - Writing your first Mockito test with Mocks
@@ -103,18 +103,34 @@ Current Directory : /Users/rangakaranam/Ranga/git/00.courses/spring-boot-master-
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
 
+			<!-- Sets a property holding the path of every dependency jar.
+			     Surefire below needs the path of mockito-core, and this resolves it
+			     rather than guessing at the layout of the local repository. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>properties</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
 			<!-- Keeps the test console clean on Java 21+.
 			     Without this, every test run prints "Mockito is currently self-attaching..."
 			     plus five JVM warning lines about dynamically loaded Java agents.
 			     Loading Mockito as a -javaagent at startup is what JEP 451 asks libraries to do.
-			     mockito.version comes from spring-boot-starter-parent, so it stays in step.
+			     The path comes from the plugin above, so the agent is always the same
+			     mockito-core that Spring Boot put on the test classpath.
 			     -Xshare:off silences the CDS warning that loading the Java agent causes.
 			     https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
-					<argLine>-javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar -Xshare:off</argLine>
+					<argLine>-javaagent:"${org.mockito:mockito-core:jar}" -Xshare:off</argLine>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -378,7 +394,7 @@ Steps 06 to 12 add 7 more test files. Code and talking points are in [99-hafeez-
 
 ## References
 
-Verified against Spring Boot 4.1.0, Java 25, Mockito 5.23.0, JUnit Jupiter 6.0.3.
+Verified against Spring Boot 4.1.0, Mockito 5.23.0 and JUnit Jupiter 6.0.3, compiled for Java 25 and run on JDK 26.
 
 - [Mockito javadoc](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html) - the main Mockito documentation
 - [BDDMockito](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/BDDMockito.html) - Step 07
@@ -386,6 +402,7 @@ Verified against Spring Boot 4.1.0, Java 25, Mockito 5.23.0, JUnit Jupiter 6.0.3
 - [UnnecessaryStubbingException](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/exceptions/misusing/UnnecessaryStubbingException.html) - Step 10
 - [MockedStatic](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/MockedStatic.html) - Step 11
 - [@MockitoBean and @MockitoSpyBean](https://docs.spring.io/spring-framework/reference/testing/annotations/integration-spring/annotation-mockitobean.html) - Step 12
+- [Strictness](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/quality/Strictness.html) - Step 10
 - [Spring Boot 4.0 migration guide](https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Migration-Guide) - why `@MockBean` and `@SpyBean` are gone
 - [Spring Boot testing reference](https://docs.spring.io/spring-boot/reference/testing/index.html)
 - [JUnit 5 user guide](https://junit.org/junit5/docs/current/user-guide/)

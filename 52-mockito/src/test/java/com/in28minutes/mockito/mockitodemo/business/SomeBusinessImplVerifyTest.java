@@ -31,10 +31,12 @@ class SomeBusinessImplVerifyTest {
 
 		businessImpl.findTheGreatestFromAllData();
 
-		verify(dataServiceMock).retrieveAllData();					//no count => exactly once
+		verify(dataServiceMock).retrieveAllData();  //no count => exactly once
 		verify(dataServiceMock, times(1)).retrieveAllData();
 		verify(dataServiceMock, atLeastOnce()).retrieveAllData();
-		verify(dataServiceMock, never()).storeGreatest(anyInt());	//we never stored anything
+
+		//nothing was stored, so never() passes
+		verify(dataServiceMock, never()).storeGreatest(anyInt());
 	}
 
 	@Test
@@ -43,7 +45,7 @@ class SomeBusinessImplVerifyTest {
 
 		businessImpl.storeTheGreatestFromAllData();
 
-		verify(dataServiceMock).storeGreatest(25);					//25 is the greatest
+		verify(dataServiceMock).storeGreatest(25);  //25 is the greatest of the three
 		verify(dataServiceMock, never()).storeGreatest(15);
 	}
 
@@ -55,7 +57,7 @@ class SomeBusinessImplVerifyTest {
 
 		verify(dataServiceMock).retrieveAllData();
 		verify(dataServiceMock).storeGreatest(25);
-		verifyNoMoreInteractions(dataServiceMock);					//fails if we missed a call
+		verifyNoMoreInteractions(dataServiceMock);  //fails if we missed a call
 	}
 
 }
