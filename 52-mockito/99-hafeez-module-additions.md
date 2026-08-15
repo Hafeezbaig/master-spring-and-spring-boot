@@ -10,7 +10,7 @@ Notes only. All code is in [readme.md](readme.md) under **Complete Code Example*
 
 **Existing - Steps 00 to 05**
 
-- Hand-written stubs, and why they do not scale
+- Handwritten stubs, and why they do not scale
 - Creating mocks with `mock()`, `@Mock`, `@InjectMocks`, `@ExtendWith(MockitoExtension.class)`
 - Stubbing with `when().thenReturn()`, and chained returns
 - Argument matchers - exact values and `anyInt()` - and default return values
@@ -40,7 +40,7 @@ Note for the recording: verification, captors, spies and BDD are not new Mockito
 ## Changes to existing files
 
 - **`DataService` gained `storeGreatest(int)`** so Steps 06 and 08 have a `void` call to verify and an argument to capture.
-- **Both hand-written stubs had to implement it.** This is a gift to **Step 02**: that step claims stubs are a maintenance burden, and now it can show it. On screen: *"I added one method to the interface and every stub class went red. A mock needs no such change."*
+- **Both handwritten stubs had to implement it.** This is a gift to **Step 02**: that step claims stubs are a maintenance burden, and now it can show it. On screen: *"I added one method to the interface and every stub class went red. A mock needs no such change."*
 - **`ListTest` uses `mock()` type inference** instead of raw `List`, so no more yellow warnings on screen, and is now package-private like every other test.
 
 ## Dependencies
@@ -127,3 +127,15 @@ Note for the recording: verification, captors, spies and BDD are not new Mockito
 - **PowerMock.** No longer needed for static or final mocking.
 - **`mockConstruction()`.** Same mechanism as Step 11, narrow use. Mention in passing.
 - **`@MockitoSpyBean` demo.** It wraps an existing bean, and this module has no real bean worth wrapping - `DataService` has no implementation outside the tests. Named in Step 12 without a demo.
+
+## New Features
+
+1. `thenAnswer()`: Mockito also supports dynamic answers where the return value depends on the invocation.
+2. `doAnswer()`: For void methods
+3. `thenThrow()`: Returning values but not throwing exceptions.
+4. `doThrow()`: For void methods
+5. `InOrder`: You verify that something happened. Mockito can also verify the order.
+6. `verifyNoInteractions()`: The mock must-have never been called.
+7. `verifyNoMoreInteractions()`: All interactions must already have been verified; nothing extra is allowed.
+
+Reference: https://site.mockito.org
