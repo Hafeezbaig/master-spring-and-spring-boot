@@ -785,7 +785,7 @@ Notes for each step: [99-hafeez-module-additions.md](99-hafeez-module-additions.
 
 ## References
 
-Verified against Spring Boot 4.1.0, Mockito 5.23.0 and JUnit Jupiter 6.0.3, compiled for Java 25 and run on JDK 26.
+Verified against Spring Boot 4.1.0, Mockito 5.23.0 and JUnit Jupiter 6.0.3, compiled for Java 25 and run on JDK 25.
 
 - [Mockito javadoc](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html) - the main Mockito documentation
 - [BDDMockito](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/BDDMockito.html) - Step 07
